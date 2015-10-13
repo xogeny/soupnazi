@@ -23,7 +23,7 @@ func (c AddCommand) Execute(args []string) error {
 		return fmt.Errorf("No license specified")
 	}
 
-	err := soupnazi.AddLicense(c.Positional.License)
+	err := soupnazi.AddLicense(c.Positional.License, c.stream)
 	if err != nil {
 		return err
 	}

@@ -32,16 +32,21 @@ func NewLM(appname string, secret string, level logrus.Level) *LM {
 	}
 }
 
-func SyntaxCheck(j string) bool {
-	ok := false
+func RawToken(j string) *jwt.Token {
+	var ret *jwt.Token = nil
 
 	jwt.Parse(j, func(token *jwt.Token) (interface{}, error) {
 		// If we got here, the basic checks passed
-		ok = true
+		ret = token
+
 		return nil, nil
 	})
 
-	return ok
+	return ret
+}
+
+func SyntaxCheck(j string) bool {
+	return RawToken(j) != nil
 }
 
 func keyFunc(key string, stream *logrus.Logger) func(token *jwt.Token) (interface{}, error) {

@@ -8,6 +8,9 @@ import (
 	"os"
 	"path"
 	"runtime"
+	"strings"
+
+	"github.com/Sirupsen/logrus"
 
 	"github.com/mitchellh/go-homedir"
 )
@@ -54,7 +57,7 @@ func LicenseFile() string {
 
 // ParseLicenses returns an error if the license
 // file is corrupted
-func ParseLicenses(lfile string) ([]string, error) {
+func ParseLicenses(lfile string, stream *logrus.Logger) ([]string, error) {
 	ret := []string{}
 	blank := []string{}
 
@@ -65,29 +68,47 @@ func ParseLicenses(lfile string) ([]string, error) {
 	}
 	defer f.Close()
 
+	stream.Infof("Extracting licenses from %s", lfile)
+
 	reader := bufio.NewReader(f)
-	line, err := reader.ReadString('\n')
+
+	process := func(r io.Reader) (string, error) {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			return "", err
+		}
+		stream.Infof("  Raw line: '%s'", line)
+		t := strings.Trim(line, "\n")
+		stream.Infof("  Trimmed line: '%s'", t)
+		return t, nil
+	}
+
+	line, err := process(reader)
 	if err == io.EOF {
 		return ret, nil
 	}
 	if err != nil {
 		return blank, err
 	}
-	ret = append(ret, line)
+	if line != "" {
+		ret = append(ret, line)
+	}
 	for err == nil {
-		line, err := reader.ReadString('\n')
+		line, err := process(reader)
 		if err == io.EOF {
 			return ret, nil
 		}
 		if err != nil {
 			return blank, err
 		}
-		ret = append(ret, line)
+		if line != "" {
+			ret = append(ret, line)
+		}
 	}
 	return blank, fmt.Errorf("License file corrupted, ended with %s", line)
 }
 
-func AddLicense(lic string) error {
+func AddLicense(lic string, stream *logrus.Logger) error {
 	if !SyntaxCheck(lic) {
 		return fmt.Errorf("License %s is not a valid JWT", lic)
 	}
@@ -97,6 +118,8 @@ func AddLicense(lic string) error {
 		return fmt.Errorf("Unable to identify settings file")
 	}
 
+	stream.Infof("License file location: %s", lfile)
+
 	// If file doesn't exist, "touch" it
 	if _, err := os.Stat(lfile); os.IsNotExist(err) {
 		pdir := path.Dir(lfile)
@@ -104,11 +127,13 @@ func AddLicense(lic string) error {
 			return fmt.Errorf("Could't determine parent directory of %s: %v", lfile, err)
 		}
 
+		stream.Infof("  Creating parent directories")
 		err := os.MkdirAll(pdir, 0777)
 		if err != nil {
 			return fmt.Errorf("Could't create parent directory %s: %v", pdir, err)
 		}
 
+		stream.Infof("  Creating license file")
 		f, err := os.Create(lfile)
 		if err != nil {
 			return fmt.Errorf("Error trying create new licenses file at %s: %v", lfile, err)
@@ -116,12 +141,18 @@ func AddLicense(lic string) error {
 		f.Close()
 	}
 
-	_, err := ParseLicenses(lfile)
+	lics, err := ParseLicenses(lfile, stream)
 	if err != nil {
 		return fmt.Errorf("License file at %s is corrupted: %v")
 	}
 
-	// TODO: Check for duplicates
+	// Check for duplicates
+	for _, l := range lics {
+		if lic == l {
+			stream.Infof("  Not adding '%s' because it is a duplicate of an existing entry", l)
+			return nil
+		}
+	}
 
 	f, err := os.OpenFile(lfile, os.O_RDWR, 0777)
 	if err != nil {
