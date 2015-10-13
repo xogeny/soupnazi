@@ -32,6 +32,42 @@ func NewLM(appname string, secret string, level logrus.Level) *LM {
 	}
 }
 
+func SyntaxCheck(j string) bool {
+	ok := false
+
+	jwt.Parse(j, func(token *jwt.Token) (interface{}, error) {
+		// If we got here, the basic checks passed
+		ok = true
+		return nil, nil
+	})
+
+	return ok
+}
+
+func keyFunc(key string, stream *logrus.Logger) func(token *jwt.Token) (interface{}, error) {
+	return func(token *jwt.Token) (interface{}, error) {
+		alg, exists := token.Header["alg"]
+		if !exists {
+			return nil, fmt.Errorf("Algorithm missing from header")
+		}
+		algs, ok := alg.(string)
+		if !ok {
+			return nil, fmt.Errorf("Algorithm not a string")
+		}
+		stream.Infof("  Algorithm: %s", algs)
+		// Don't forget to validate the alg is what you expect:
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+		if algs != "HS256" {
+			return nil, fmt.Errorf("Unexpected algorithm: %s", algs)
+		}
+
+		stream.Infof("  Unverified token: %v", token)
+		return []byte(key), nil
+	}
+}
+
 // License checks to see if a given feature is licensed and, if it is,
 // it provides a map of parameters about the feature.  These parameters
 // generally represent any limitations that might be associated with the
