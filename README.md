@@ -1,4 +1,6 @@
-# License Management with JWTs?
+# No Soup for You!
+
+## License Management with JWTs?
 
 I had some code I wanted to be able to license so I looked around for
 some open source alternatives to the FlexLM type of approach.  I
@@ -13,18 +15,13 @@ of grant in them and then they are signed using some shared secret.
 The interesting thing about a JWT is that it can actually encode
 different types of information and grants.
 
-# Approach
+## Approach
 
-## Node-Locked Licenses
+The basic idea here is to encode the details of whether the user
+"holds" a valid license for a given feature of a given application.
+This can be done in two ways:
 
-Currently, there is only one type of grant.  It can be represented in
-JSON as:
+### Node-Locked Licenses
 
-...
+### Floating Licenses
 
-## Floating Licenses
-
-Eventually, I'd like to include another type of JWT that includes some
-kind of GUID and then contacts a server to determine if that GUID
-should be granted what is being requested.  This would enable what
-essentially amounts ot a floating license server implementation.

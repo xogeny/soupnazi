@@ -1,4 +1,4 @@
-package check
+package soupnazi
 
 import (
 	"fmt"
@@ -6,7 +6,6 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/spf13/viper"
 )
 
 type LM struct {
@@ -17,24 +16,11 @@ type LM struct {
 }
 
 func NewLM(appname string, secret string, level logrus.Level) *LM {
-	jwts := []string{}
-
-	// Name of config file (without extension)
-	viper.SetConfigName(fmt.Sprintf("%s_licenses", appname))
-	viper.SetEnvPrefix(appname)
-	viper.AutomaticEnv()
-
-	// Find and read the config file
-	err := viper.ReadInConfig()
-	if err == nil {
-		// Get JWTs
-	}
-
-	jwts = viper.GetStringSlice("licenses")
-
 	stream := logrus.New()
 	stream.Level = level
 	stream.Out = os.Stderr
+
+	jwts := LoadJWTs(stream)
 
 	stream.Infof("licenses: %v", jwts)
 
@@ -59,22 +45,25 @@ func (lm LM) License(feature string) (map[string]string, error) {
 		lm.stream.Debugf("Processing JWT: '%s'", j)
 		// Parse the JWTs
 		token, err := jwt.Parse(j, func(token *jwt.Token) (interface{}, error) {
+			alg, exists := token.Header["alg"]
+			if !exists {
+				return nil, fmt.Errorf("Algorithm missing from header")
+			}
+			algs, ok := alg.(string)
+			if !ok {
+				return nil, fmt.Errorf("Algorithm not a string")
+			}
+			lm.stream.Infof("  Algorithm: %s", algs)
 			// Don't forget to validate the alg is what you expect:
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 			}
+			if algs != "HS256" {
+				return nil, fmt.Errorf("Unexpected algorithm: %s", algs)
+			}
+
 			lm.stream.Infof("  Unverified token: %v", token)
-			kid, exists := token.Header["kid"]
-			if !exists {
-				return []byte{}, fmt.Errorf("Verification key not found in token: %v", token)
-			}
-			key, ok := kid.(string)
-			if ok {
-				return []byte(key), nil
-			} else {
-				return []byte{},
-					fmt.Errorf("Expected verification key to be a string, but found %T", token)
-			}
+			return []byte(lm.secret), nil
 		})
 
 		// If there was an error parsing the token, skip it
