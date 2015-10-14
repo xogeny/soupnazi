@@ -17,7 +17,7 @@ func TestLifecycles(t *testing.T) {
 	stream.Level = logrus.WarnLevel
 	stream.Out = os.Stderr
 
-	exp := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhIjoiUjJEMiIsImFwcCI6ImFwcGxpY2F0aW9uIiwiZiI6ImZlYXR1cmUifQ.p6h1xDftlnsMtrAbH5VgA9OTq0qAdqEb0YECVqd8ZGg"
+	exp := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhIjoiUjJEMiIsImFwcCI6ImFwcGxpY2F0aW9uIiwiZiI6ImZlYXR1cmUifQ.xjsY8z4xgbxLocOd0IgZVk4XbKGtHyKKhNS3L3vAlZQ"
 
 	details := NodeLocked{
 		Application: "application",
@@ -59,8 +59,17 @@ func TestLifecycles(t *testing.T) {
 		jwt, err := GenerateNodeLocked(details, stream)
 		NoError(c, err)
 
-		_, err = jwtgo.Parse(jwt, KeyFunc(details.Secret, stream))
+		token, err := jwtgo.Parse(jwt, KeyFunc(details.Secret, stream))
 		NoError(c, err)
 		Equals(c, jwt, exp)
+		Equals(c, token.Valid, true)
+	})
+
+	Convey("Should fail verification if different secret is given", t, func(c C) {
+		jwt, err := GenerateNodeLocked(details, stream)
+		NoError(c, err)
+
+		token, err := jwtgo.Parse(jwt, KeyFunc(details.Secret+" not", stream))
+		Equals(c, token.Valid, false)
 	})
 }

@@ -25,7 +25,7 @@ type NodeLocked struct {
 // detected.
 func KeyHash(k string) string {
 	h := sha256.New()
-	h.Sum([]byte(k))
+	h.Write([]byte(k))
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 

@@ -85,9 +85,13 @@ func KeyFunc(key string, stream *logrus.Logger) func(token *jwt.Token) (interfac
 			return nil, fmt.Errorf("Unexpected algorithm: %s", algs)
 		}
 
-		stream.Infof("  Unverified token: %v", token)
+		hash := KeyHash(key)
 
-		return []byte(KeyHash(key)), nil
+		stream.Infof("  Unverified token: %v", token)
+		stream.Debugf("  Secret key was: %v", key)
+		stream.Debugf("  Hash is: %v", hash)
+
+		return []byte(hash), nil
 	}
 }
 
