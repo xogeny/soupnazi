@@ -1,5 +1,8 @@
 # No Soup for You!
 
+**Note: This is not production ready.  I'm putting it up here mainly
+  to allow others to review the approach.**
+
 ## License Management with JWTs?
 
 I had some code I wanted to be able to license so I looked around for
