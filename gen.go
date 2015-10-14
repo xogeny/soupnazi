@@ -1,6 +1,8 @@
 package soupnazi
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -16,11 +18,22 @@ type NodeLocked struct {
 	Params      map[string]string
 }
 
+// This function transforms the "shared secret" key into a sha256
+// hash.  This means that a shared secret key longer than 32 bytes
+// really doesn't add anything.  The reason I chose a sha256 hash was
+// to have uniform key lengths so corruption could be more easily
+// detected.
+func KeyHash(k string) string {
+	h := sha256.New()
+	h.Sum([]byte(k))
+	return fmt.Sprintf("%x", h.Sum(nil))
+}
+
 func GenerateNodeLocked(details NodeLocked, stream *logrus.Logger) (string, error) {
 	// Create the token
 	token := jwt.New(jwt.SigningMethodHS256)
 
-	var key = details.Secret
+	key := KeyHash(details.Secret)
 
 	// Set some claims
 	token.Claims["app"] = details.Application

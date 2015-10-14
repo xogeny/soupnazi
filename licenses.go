@@ -109,8 +109,12 @@ func ParseLicenses(lfile string, stream *logrus.Logger) ([]string, error) {
 }
 
 func AddLicense(lic string, stream *logrus.Logger) error {
-	if !SyntaxCheck(lic) {
+	token := RawToken(lic)
+
+	if token == nil {
 		return fmt.Errorf("License %s is not a valid JWT", lic)
+	} else {
+		stream.Debugf("License passed syntax checking: %v", token)
 	}
 
 	lfile := LicenseFile()

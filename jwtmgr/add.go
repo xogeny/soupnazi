@@ -28,6 +28,7 @@ func (c AddCommand) Execute(args []string) error {
 		return err
 	}
 
+	fmt.Printf("License successfully installed\n")
 	return nil
 }
 
