@@ -95,6 +95,13 @@ func KeyFunc(key string, stream *logrus.Logger) func(token *jwt.Token) (interfac
 	}
 }
 
+// Add adds a specific license to this license manager.  This is useful
+// for manually injecting a specific license that can be, for example,
+// embedded in a binary.
+func (lm *LM) Add(license string) {
+	lm.jwts = append(lm.jwts, license)
+}
+
 // License checks to see if a given feature is licensed and, if it is,
 // it provides a map of parameters about the feature.  These parameters
 // generally represent any limitations that might be associated with the

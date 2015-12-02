@@ -12,6 +12,19 @@ import (
 	. "github.com/xogeny/xconvey"
 )
 
+func TestLM(t *testing.T) {
+	stream := logrus.New()
+	stream.Level = logrus.WarnLevel
+	stream.Out = os.Stderr
+
+	sharedSecret := "Don't tell anybody"
+
+	Convey("Create a license manager instance", t, func(c C) {
+		lm := NewLM("xengen", sharedSecret)
+		NotNil(c, lm)
+	})
+}
+
 func TestLifecycles(t *testing.T) {
 	stream := logrus.New()
 	stream.Level = logrus.WarnLevel
