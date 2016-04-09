@@ -107,7 +107,7 @@ func (lm *LM) Add(license string) {
 // generally represent any limitations that might be associated with the
 // feature.  The parameters are feature specific and are encoded in
 // the JWTs themselves
-func (lm LM) License(feature string) (map[string]string, error) {
+func (lm LM) License(feature string) (map[string]string, *jwt.Token, error) {
 	blank := map[string]string{}
 
 	// Loop over JWTs
@@ -130,12 +130,14 @@ func (lm LM) License(feature string) (map[string]string, error) {
 		// TODO: Check if it unlocks feature
 		if app, ok := token.Claims["app"]; ok {
 			if app != lm.appname {
-				lm.stream.Debugf("  Token is for application %s, not %s", app, lm.appname)
+				lm.stream.Debugf("  Token is for application %s, not %s",
+					app, lm.appname)
 				continue
 			}
 			if feat, ok := token.Claims["f"]; ok {
 				if feat != feature {
-					lm.stream.Debugf("  Token is for feature %s, not %s", feat, feature)
+					lm.stream.Debugf("  Token is for feature %s, not %s",
+						feat, feature)
 					continue
 				}
 				lm.stream.Debugf("  Token matches")
@@ -149,12 +151,12 @@ func (lm LM) License(feature string) (map[string]string, error) {
 						params[k] = fmt.Sprintf("%v", v)
 					}
 				} else {
-					lm.stream.Warnf("  Token included invalid parameter field")
+					lm.stream.Warnf("  Token includes no parameters")
 				}
 
 				// License found
 				lm.stream.Infof("  Parameter set: %v", params)
-				return params, nil
+				return params, token, nil
 			} else {
 				lm.stream.Debugf("  Token does not specify a feature")
 			}
@@ -164,6 +166,7 @@ func (lm LM) License(feature string) (map[string]string, error) {
 	}
 
 	// No soup for you!
-	return blank, fmt.Errorf("Unable to locate a license for feature %s of application %s",
-		feature, lm.appname)
+	return blank, nil,
+		fmt.Errorf("Unable to locate a license for feature %s of application %s",
+			feature, lm.appname)
 }

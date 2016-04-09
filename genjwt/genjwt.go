@@ -21,6 +21,7 @@ type Options struct {
 	MAC       string            `long:"mac" short:"m" description:"MAC Address (or 'Any')"`
 	Verbose   bool              `long:"verbose" short:"v" description:"Verbose output"`
 	Unlimited bool              `long:"unlimited" short:"u" description:"Token doesn't expire"`
+	Expired   bool              `long:"expired" short:"e" description:"Token that has already expired"`
 }
 
 func main() {
@@ -69,11 +70,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	mins := Options.Days * 60 * 60 * 24
+	mins := Options.Days * 24 * 60
 
 	// If no days are specified,
 	if Options.Days == 0 {
-		if Options.Unlimited {
+		if Options.Expired {
+			mins = 0
+		} else if Options.Unlimited {
 			mins = -1
 		} else {
 			fmt.Printf("Either provide number of days to expiration (--days) or (--unlimited)\n")

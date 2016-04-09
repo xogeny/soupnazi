@@ -50,8 +50,10 @@ func GenerateNodeLocked(details NodeLocked, stream *logrus.Logger) (string, erro
 		stream.Infof("  Token will never expire")
 	} else {
 		dur := time.Minute * time.Duration(mins)
-		token.Claims["exp"] = time.Now().Add(dur).Unix()
+		exp := time.Now().Add(dur)
+		token.Claims["exp"] = exp.Unix()
 		stream.Infof("  Token will expire in: %s", dur.String())
+		stream.Infof("    (on %v)", exp.Format(time.UnixDate))
 	}
 
 	if details.MAC == "*" {
